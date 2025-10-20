@@ -1,5 +1,5 @@
 
-# AI Tools for Software Engineering - Week 3 Summary
+# AI Tools for Software Engineering - Week 3 Summary presentation:  https://gamma.app/docs/AI-Development-Tools-Ethics-lsml7emhgre6hjf
 
 ## Project Overview
 This project demonstrates the versatility and practical applications of AI tools in software engineering through three interconnected tasks. Each task explores a different paradigm of machine learning, progressing from traditional algorithms to modern deep learning and natural language processing approaches.
