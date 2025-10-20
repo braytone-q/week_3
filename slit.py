@@ -1,54 +1,58 @@
-import streamlit as st
+from flask import Flask, request, render_template_string
 import numpy as np
 from tensorflow.keras.models import load_model
 from PIL import Image, ImageOps
-import matplotlib.pyplot as plt
+import io
 
-# ===== Load the trained MNIST model =====
-model = load_model("mnist_model.h5")  # replace with your model path
+app = Flask(__name__)
+model = load_model("mnist_model.h5")
 
-st.title("MNIST Digit Classifier")
-st.write("Draw a digit (0-9) below or upload an image, and the model will predict it!")
+HTML_FORM = '''
+<!doctype html>
+<title>MNIST Digit Classifier</title>
+<h1>Upload a 28x28 grayscale digit image</h1>
+<form method=post enctype=multipart/form-data>
+  <input type=file name=file accept="image/*">
+  <input type=submit value=Predict>
+</form>
+{% if prediction is not none %}
+  <h2>Predicted Digit: {{ prediction }}</h2>
+  <h3>Confidence: {{ confidence }}</h3>
+  <img src="data:image/png;base64,{{ image_data }}" width="150"/>
+{% endif %}
+'''
 
-# ===== Upload or Draw Input =====
-choice = st.radio("Choose input method:", ["Upload Image", "Draw Digit"])
+import base64
 
-if choice == "Upload Image":
-    uploaded_file = st.file_uploader("Upload a 28x28 grayscale image", type=["png", "jpg", "jpeg"])
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("L")
-elif choice == "Draw Digit":
-    st.write("Draw a digit on the canvas below")
-    from streamlit_drawable_canvas import st_canvas
-
-    canvas_result = st_canvas(
-        fill_color="black",
-        stroke_width=20,
-        stroke_color="white",
-        background_color="black",
-        width=280,
-        height=280,
-        drawing_mode="freedraw",
-        key="canvas",
-    )
-    if canvas_result.image_data is not None:
-        image = Image.fromarray(canvas_result.image_data.astype("uint8")).convert("L")
-
-# ===== Preprocess & Predict =====
-if 'image' in locals():
-    # Resize to 28x28
+def preprocess_image(image):
+    image = image.convert("L")
     image = ImageOps.invert(image)
     image = image.resize((28, 28))
-    image_array = np.array(image)/255.0
+    image_array = np.array(image) / 255.0
     image_array = image_array.reshape(1, 28, 28, 1)
+    return image_array, image
 
-    # Show the input image
-    st.image(image, caption="Input Image", width=150)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    prediction = None
+    confidence = None
+    image_data = None
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file:
+            image = Image.open(file.stream)
+            arr, img = preprocess_image(image)
+            pred = model.predict(arr)
+            predicted_digit = int(np.argmax(pred))
+            conf = float(np.max(pred))
+            # Convert image to base64 for display
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            img_b64 = base64.b64encode(buf.getvalue()).decode()
+            prediction = predicted_digit
+            confidence = f"{conf:.2f}"
+            image_data = img_b64
+    return render_template_string(HTML_FORM, prediction=prediction, confidence=confidence, image_data=image_data)
 
-    # Predict
-    prediction = model.predict(image_array)
-    predicted_digit = np.argmax(prediction)
-    confidence = np.max(prediction)
-
-    st.write(f"Predicted Digit: **{predicted_digit}**")
-    st.write(f"Confidence: **{confidence:.2f}**")
+if __name__ == '__main__':
+    app.run(debug=True)
