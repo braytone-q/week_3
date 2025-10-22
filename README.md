@@ -261,3 +261,23 @@ history = model.fit(
 ## Conclusion
 
 This project successfully demonstrates the practical application of various AI techniques in software engineering. Through three distinct tasks, it showcases the versatility of machine learning approaches in solving different types of problems. The implementation provides a solid foundation for future AI-driven software engineering projects.
+
+## How to Train the Model and Run the Flask App
+
+### 1. Train the Keras MNIST Model
+
+From your project directory, run:
+```bash
+python train_and_save_keras_mnist.py
+```
+This will train a CNN on the MNIST dataset and save the model as `mnist_model.h5`.
+
+### 2. Run the Flask Digit Classifier App
+
+After training the model, start the Flask app with:
+```bash
+python app.py
+```
+Then open your browser and go to [http://127.0.0.1:5000/](http://127.0.0.1:5000/) to use the digit classifier.
+
+---
